@@ -165,11 +165,14 @@ impl<I: InputRead> Game<I> {
     fn play(&mut self, start: Option<String>) -> io::Result<()> {
         let words = Words::new()?;
 
+        if let Some(start) = &start {
+            println!("Starting with {}", start);
+        }
         let mut word = match start {
             Some(w) => w,
             None => I::get_valid(words.randoms())?.unwrap(),
         };
-        for _ in 0..5 {
+        for i in 0..6 {
             let chars: [char; 5] = word.chars().collect::<Vec<char>>().try_into().unwrap();
 
             let mut hints;
@@ -193,6 +196,9 @@ impl<I: InputRead> Game<I> {
             }
             if hints.iter().all(|hint| matches!(hint, Hint::CorrectPos(_))) {
                 println!("Congratulations! 🎉");
+                return Ok(());
+            } else if i == 5 {
+                println!("I'm sorry I was not good enough 😿");
                 return Ok(());
             }
 
@@ -267,6 +273,7 @@ impl<I: InputRead> Game<I> {
                 word = w;
             } else {
                 println!("No more candidates found 😿");
+                break;
             }
         }
 
