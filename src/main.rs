@@ -203,8 +203,6 @@ impl<I: InputRead> Game<I> {
                 }
             }
 
-            println!("Excluded letters: {:?}", self.excluded_letters);
-
             let remaining_positions = hints
                 .iter()
                 .enumerate()
@@ -225,8 +223,6 @@ impl<I: InputRead> Game<I> {
                 words.words.iter().filter(no_excluded_letters).cloned(),
             );
 
-            println!("Candidates: {:?}", candidates.len());
-
             // Get candidates from correct position
             for (i, hint) in hints.iter().enumerate() {
                 if let Hint::CorrectPos(c) = hint {
@@ -240,7 +236,6 @@ impl<I: InputRead> Game<I> {
                             )
                             .cloned()
                             .collect();
-                        println!("Candidates: {:?}", candidates.len());
                     }
                 }
             }
@@ -264,11 +259,15 @@ impl<I: InputRead> Game<I> {
                             None => false,
                         })
                         .collect();
-                    println!("Candidates: {:?}", candidates.len());
                 }
             }
+            println!("Number of candidates: {:?}", candidates.len());
 
-            word = I::get_valid(candidates.into_iter())?.expect("valid word");
+            if let Some(w) = I::get_valid(candidates.into_iter())? {
+                word = w;
+            } else {
+                println!("No more candidates found 😿");
+            }
         }
 
         println!("I'm sorry I was not good enough 😿");
@@ -276,6 +275,10 @@ impl<I: InputRead> Game<I> {
     }
 }
 
+/// WORDLE solver
+///
+/// Hints are provided as 5 letter words. "-" means excluded letter.
+/// Upper case means letter in the right position. Lower case means letter in wrong position
 #[derive(StructOpt, Debug)]
 #[structopt(name = "wordle")]
 struct Opt {
@@ -285,6 +288,8 @@ struct Opt {
 
 fn main() -> io::Result<()> {
     let opt = Opt::from_args();
+
+    println!("Welcome to the WORDLE solver!");
 
     let mut game = Game::<InputReader>::new();
     game.play(opt.start)?;
