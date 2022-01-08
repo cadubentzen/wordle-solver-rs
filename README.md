@@ -7,6 +7,12 @@ It uses a 5-letters word database derived from https://github.com/dwyl/english-w
 
 As any usual Rust project `cargo build` is enough to build this project.
 
+Hints are provided as 5 letter words.
+
+- "-" means the letter is not present anywhere remaining in the word
+- Upper case means the letter in the right position
+- Lower case means the letter in wrong position
+
 An example using it with the result below:
 
 ![Example](example.png)
