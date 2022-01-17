@@ -43,7 +43,6 @@ You can also set a start word by passing it via the `--start <word>` or `-s <wor
 
 # Improvements needed
 
-- The logic excluding letters is slightly wrong. It works in nearly all cases but can lead to failures.
-  One example is starting with "weens" and providing "-e---" as hint.
 - Because we are using unordered sets here, the iterators don't necessarily provide the same order when executing the
   solver with the same input. Solving this could make our life easier to adding tests.
+- The exclusion of candidates from the wrong positions can be improved if we keep the history of previous incorrect positions. Currently it gets candidates based only on the last hint. However this is already working pretty ok.

@@ -149,15 +149,21 @@ impl InputRead for InputReader {
     }
 }
 
+#[derive(Debug, Default)]
+struct LetterCount {
+    count: usize,
+    excluded_positions: HashSet<usize>
+}
+
 struct Game<I: InputRead> {
-    excluded_letters: HashSet<char>,
+    letter_counts: HashMap<char, LetterCount>,
     phantom: std::marker::PhantomData<I>,
 }
 
 impl<I: InputRead> Game<I> {
     fn new() -> Self {
         Self {
-            excluded_letters: HashSet::new(),
+            letter_counts: HashMap::new(),
             phantom: std::marker::PhantomData::default(),
         }
     }
@@ -205,28 +211,32 @@ impl<I: InputRead> Game<I> {
             // Add excluded letters
             for (i, hint) in hints.iter().enumerate() {
                 if let Hint::Excluded = hint {
-                    self.excluded_letters.insert(chars[i]);
+                    if let Some(letter_count) = self.letter_counts.get_mut(&chars[i]) {
+                        letter_count.excluded_positions.insert(i);
+                    } else {
+                        let count = hints.iter().filter(|hint| {
+                            match hint {
+                                Hint::CorrectPos(c) | Hint::WrongPos(c) => *c == chars[i],
+                                _ => false,
+                            }
+                        }).count();
+                        self.letter_counts.insert(chars[i], LetterCount { count, excluded_positions: HashSet::from([i]) });
+                    }
                 }
             }
 
-            let remaining_positions = hints
-                .iter()
-                .enumerate()
-                .filter_map(|(pos, hint)| match hint {
-                    Hint::WrongPos(_) | Hint::Excluded => Some(pos),
-                    _ => None,
-                })
-                .collect::<Vec<_>>();
-
-            let no_excluded_letters = |word: &&String| {
+            let match_letter_counts = |word: &&String| {
                 let chars = word.chars().collect::<Vec<char>>();
-                self.excluded_letters
+                self.letter_counts
                     .iter()
-                    .all(|letter| remaining_positions.iter().all(|pos| chars[*pos] != *letter))
+                    .all(|(letter, letter_count)| {
+                        let count_found = chars.iter().filter(|c| *c == letter).count();
+                        count_found == letter_count.count && letter_count.excluded_positions.iter().all(|pos| chars[*pos] != *letter)
+                    })
             };
 
             let mut candidates = HashSet::<String>::from_iter(
-                words.words.iter().filter(no_excluded_letters).cloned(),
+                words.words.iter().filter(match_letter_counts).cloned(),
             );
 
             // Get candidates from correct position
@@ -236,7 +246,7 @@ impl<I: InputRead> Game<I> {
                         candidates = candidates
                             .intersection(
                                 &new_candidates
-                                    .filter(no_excluded_letters)
+                                    .filter(match_letter_counts)
                                     .cloned()
                                     .collect::<HashSet<_>>(),
                             )
